@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Searchable and Sortable Table</title>
+    <style>
+        :root {
+            --bg-color: #f5f7fa;
+            --container-bg: #ffffff;
+            --header-bg: #2563eb;
+            --controls-bg: #f8f9fa;
+            --table-header-bg: #3b82f6;
+            --table-header-hover: #2563eb;
+            --table-row-hover: #f8f9fa;
+            --border-color: #e5e7eb;
+            --text-color: #1f2937;
+            --text-secondary: #6b7280;
+            --search-focus: #3b82f6;
+            --employee-id-color: #2563eb;
+            --department-bg: #dbeafe;
+            --department-text: #1e40af;
+            --salary-color: #059669;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1f2937;
+            --container-bg: #374151;
+            --header-bg: #1f2937;
+            --controls-bg: #4b5563;
+            --table-header-bg: #374151;
+            --table-header-hover: #4b5563;
+            --table-row-hover: #4b5563;
+            --border-color: #6b7280;
+            --text-color: #f9fafb;
+            --text-secondary: #d1d5db;
+            --search-focus: #60a5fa;
+            --employee-id-color: #60a5fa;
+            --department-bg: #1e3a8a;
+            --department-text: #93c5fd;
+            --salary-color: #10b981;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-color);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--container-bg);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px var(--shadow-color);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            background: var(--header-bg);
+            color: var(--text-color);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: 300;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            color: white;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            padding: 8px 16px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .controls {
+            padding: 30px;
+            display: flex;
+            justify-content: flex-end;
+            background: var(--controls-bg);
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-box {
+            width: 300px;
+            padding: 12px 45px 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: var(--container-bg);
+            color: var(--text-color);
+        }
+
+        .search-box:focus {
+            border-color: var(--search-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .search-box::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 18px;
+        }
+
+        .table-container {
+            padding: 30px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--container-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px var(--shadow-color);
+        }
+
+        .data-table th {
+            background: var(--table-header-bg);
+            color: white;
+            padding: 20px 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background 0.3s ease;
+        }
+
+        .data-table th:hover {
+            background: var(--table-header-hover);
+        }
+
+        .data-table th .sort-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+        }
+
+        .data-table th.sort-asc .sort-icon {
+            opacity: 1;
+            transform: translateY(-50%) rotate(0deg);
+        }
+
+        .data-table th.sort-desc .sort-icon {
+            opacity: 1;
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .data-table td {
+            padding: 18px 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 15px;
+            transition: all 0.3s ease;
+            color: var(--text-color);
+        }
+
+        .data-table tr:hover td {
+            background: var(--table-row-hover);
+            transform: scale(1.01);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 50px;
+            color: var(--text-secondary);
+            font-size: 18px;
+            font-style: italic;
+        }
+
+        .employee-id {
+            font-weight: 600;
+            color: var(--employee-id-color);
+        }
+
+        .department {
+            background: var(--department-bg);
+            color: var(--department-text);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .salary {
+            font-weight: 600;
+            color: var(--salary-color);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+
+            .controls {
+                padding: 20px;
+                justify-content: center;
+            }
+
+            .search-box {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .table-container {
+                padding: 20px 10px;
+                overflow-x: auto;
+            }
+
+            .data-table {
+                min-width: 600px;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 12px 8px;
+                font-size: 14px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="theme-toggle" onclick="toggleTheme()">
+                <span id="themeIcon">🌙</span>
+                <span id="themeText">Dark Mode</span>
+            </div>
+            <h1>Employee Management</h1>
+            <p>Search and sort employee data with ease</p>
+        </div>
+
+        <div class="controls">
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    class="search-box" 
+                    placeholder="Search employees..."
+                    id="searchInput"
+                >
+                <span class="search-icon">🔍</span>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table" id="dataTable">
+                <thead>
+                    <tr>
+                        <th data-column="id">
+                            Employee ID
+                            <span class="sort-icon">▲</span>
+                        </th>
+                        <th data-column="name">
+                            Name
+                            <span class="sort-icon">▲</span>
+                        </th>
+                        <th data-column="department">
+                            Department
+                            <span class="sort-icon">▲</span>
+                        </th>
+                        <th data-column="salary">
+                            Salary
+                            <span class="sort-icon">▲</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Table data will be inserted here -->
+                </tbody>
+            </table>
+            <div class="no-results" id="noResults" style="display: none;">
+                No employees found matching your search criteria.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample employee data
+        const employees = [
+            { id: 'E001', name: 'John Smith', department: 'Engineering', salary: 75000 },
+            { id: 'E002', name: 'Sarah Johnson', department: 'Marketing', salary: 65000 },
+            { id: 'E003', name: 'Mike Davis', department: 'Sales', salary: 58000 },
+            { id: 'E004', name: 'Emily Brown', department: 'HR', salary: 62000 },
+            { id: 'E005', name: 'David Wilson', department: 'Engineering', salary: 80000 },
+            { id: 'E006', name: 'Lisa Anderson', department: 'Finance', salary: 70000 },
+            { id: 'E007', name: 'Tom Miller', department: 'Marketing', salary: 55000 },
+            { id: 'E008', name: 'Anna Taylor', department: 'Sales', salary: 60000 }
+        ];
+
+        let currentData = [...employees];
+        let currentSort = { column: null, direction: 'asc' };
+
+        // Get DOM elements
+        const searchInput = document.getElementById('searchInput');
+        const tableBody = document.getElementById('tableBody');
+        const noResults = document.getElementById('noResults');
+        const table = document.getElementById('dataTable');
+        const themeIcon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
+
+        // Theme management
+        const initTheme = () => {
+            const savedTheme = localStorage.getItem('tableTheme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeToggle(savedTheme);
+        };
+
+        const toggleTheme = () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('tableTheme', newTheme);
+            updateThemeToggle(newTheme);
+        };
+
+        const updateThemeToggle = (theme) => {
+            if (theme === 'dark') {
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'Light Mode';
+            } else {
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Dark Mode';
+            }
+        };
+
+        // Format salary with commas and dollar sign
+        const formatSalary = (salary) => {
+            return `$${salary.toLocaleString()}`;
+        };
+
+        // Render table data
+        const renderTable = (data) => {
+            if (data.length === 0) {
+                tableBody.innerHTML = '';
+                table.style.display = 'none';
+                noResults.style.display = 'block';
+                return;
+            }
+
+            table.style.display = 'table';
+            noResults.style.display = 'none';
+
+            tableBody.innerHTML = data.map(employee => `
+                <tr>
+                    <td><span class="employee-id">${employee.id}</span></td>
+                    <td>${employee.name}</td>
+                    <td><span class="department">${employee.department}</span></td>
+                    <td><span class="salary">${formatSalary(employee.salary)}</span></td>
+                </tr>
+            `).join('');
+        };
+
+        // Search functionality
+        const searchEmployees = (query) => {
+            if (!query.trim()) {
+                currentData = [...employees];
+            } else {
+                const searchTerm = query.toLowerCase();
+                currentData = employees.filter(employee =>
+                    employee.id.toLowerCase().includes(searchTerm) ||
+                    employee.name.toLowerCase().includes(searchTerm) ||
+                    employee.department.toLowerCase().includes(searchTerm) ||
+                    employee.salary.toString().includes(searchTerm)
+                );
+            }
+
+            // Re-apply current sort if any
+            if (currentSort.column) {
+                sortData(currentSort.column, currentSort.direction);
+            } else {
+                renderTable(currentData);
+            }
+        };
+
+        // Sort functionality
+        const sortData = (column, direction) => {
+            const sortedData = [...currentData].sort((a, b) => {
+                let aValue = a[column];
+                let bValue = b[column];
+
+                // Handle different data types
+                if (typeof aValue === 'string') {
+                    aValue = aValue.toLowerCase();
+                    bValue = bValue.toLowerCase();
+                }
+
+                if (direction === 'asc') {
+                    return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+                } else {
+                    return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+                }
+            });
+
+            renderTable(sortedData);
+        };
+
+        // Update sort icons
+        const updateSortIcons = (activeColumn, direction) => {
+            // Reset all headers
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+
+            // Set active column
+            if (activeColumn) {
+                const activeHeader = document.querySelector(`th[data-column="${activeColumn}"]`);
+                activeHeader.classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+        };
+
+        // Event listeners
+        searchInput.addEventListener('input', (e) => {
+            searchEmployees(e.target.value);
+        });
+
+        // Add click listeners to table headers
+        document.querySelectorAll('th[data-column]').forEach(header => {
+            header.addEventListener('click', () => {
+                const column = header.dataset.column;
+                
+                // Toggle sort direction
+                if (currentSort.column === column) {
+                    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSort.direction = 'asc';
+                }
+                
+                currentSort.column = column;
+                
+                sortData(column, currentSort.direction);
+                updateSortIcons(column, currentSort.direction);
+            });
+        });
+
+        // Add search box focus effects
+        searchInput.addEventListener('focus', () => {
+            document.querySelector('.search-container').style.transform = 'scale(1.02)';
+        });
+
+        searchInput.addEventListener('blur', () => {
+            document.querySelector('.search-container').style.transform = 'scale(1)';
+        });
+
+        // Initialize table and theme
+        initTheme();
+        renderTable(currentData);
+    </script>
+</body>
+</html>
